@@ -1,0 +1,10 @@
+services:
+  jersey-minders:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Set this to your local timezone so reminders fire at the right time.
+      # Examples: America/New_York, America/Chicago, America/Denver, America/Los_Angeles
+      - TZ=America/New_York
