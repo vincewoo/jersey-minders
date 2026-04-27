@@ -4,10 +4,14 @@ import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from src.message import build_discord_payload
+
 logger = logging.getLogger(__name__)
 
 
-def send_notifications(subject: str, plain: str, html: str, config: dict) -> None:
+def send_notifications(
+    subject: str, plain: str, html: str, config: dict, games: list[dict] | None = None
+) -> None:
     """Dispatch to all enabled notification channels."""
     any_enabled = False
 
@@ -27,10 +31,19 @@ def send_notifications(subject: str, plain: str, html: str, config: dict) -> Non
         except Exception as exc:
             logger.error(f"ntfy failed: {exc}")
 
+    if config.get("discord_enabled"):
+        any_enabled = True
+        try:
+            payload = build_discord_payload(games or [], subject)
+            _send_discord(payload, config)
+            logger.info("Discord notification sent successfully")
+        except Exception as exc:
+            logger.error(f"Discord failed: {exc}")
+
     if not any_enabled:
         logger.warning(
             "No notification channels are enabled. "
-            "Set EMAIL_ENABLED=true or NTFY_ENABLED=true in your .env file."
+            "Set EMAIL_ENABLED=true, NTFY_ENABLED=true, or DISCORD_ENABLED=true in your .env file."
         )
 
 
@@ -69,6 +82,15 @@ def _send_ntfy(subject: str, plain: str, config: dict) -> None:
             "Priority": "default",
             "Tags": "ice_hockey",
         },
+        timeout=15,
+    )
+    resp.raise_for_status()
+
+
+def _send_discord(payload: dict, config: dict) -> None:
+    resp = requests.post(
+        config["discord_webhook_url"],
+        json=payload,
         timeout=15,
     )
     resp.raise_for_status()

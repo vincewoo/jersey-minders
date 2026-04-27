@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+_JERSEY_MIKES_RED = 0xC8102E  # decimal 13111342
+
 
 def fmt_odds(odds: int | None) -> str:
     if odds is None:
@@ -53,6 +55,44 @@ def build_message(games: list[dict]) -> tuple[str, str]:
     # --- HTML ---
     html = _build_html(today, games)
     return plain, html
+
+
+def build_discord_payload(games: list[dict], subject: str) -> dict:
+    """Build a Discord webhook payload with an embed for each game."""
+    today = datetime.now().strftime("%A, %B %-d")
+
+    if not games:
+        return {
+            "username": "Jersey Minders",
+            "embeds": [{
+                "title": f"🏒 {subject}",
+                "description": "No NHL games today. Enjoy the day off!",
+                "color": _JERSEY_MIKES_RED,
+                "footer": {"text": "Jersey Minders · Odds via The Odds API"},
+            }],
+        }
+
+    fields = []
+    for g in games:
+        time_str = g["game_time"].strftime("%-I:%M %p %Z")
+        fave = g["favorite"] or "Even / No line"
+        name = f"{g['away_team']} ({fmt_odds(g['away_odds'])})  @  {g['home_team']} ({fmt_odds(g['home_odds'])})"
+        value = f"🏆 **{fave}** · {time_str}"
+        fields.append({"name": name, "value": value, "inline": False})
+
+    return {
+        "username": "Jersey Minders",
+        "embeds": [{
+            "title": f"🏒 {subject}",
+            "description": (
+                f"Time to make your **Jersey Mike's NHL Predictors** picks!\n"
+                f"[Make Your Picks](https://www.jerseymikes.com/nhl)"
+            ),
+            "color": _JERSEY_MIKES_RED,
+            "fields": fields,
+            "footer": {"text": f"Jersey Minders · Odds via The Odds API · {today}"},
+        }],
+    }
 
 
 def _build_html(today: str, games: list[dict]) -> str:
