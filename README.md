@@ -7,7 +7,7 @@ Daily morning reminder to make your **Jersey Mike's NHL Predictors** picks, with
 Every morning at a time you set, it:
 1. Fetches that day's NHL games and moneyline odds (via [The Odds API](https://the-odds-api.com))
 2. Identifies the Vegas favorite in each matchup
-3. Sends you a formatted reminder via **email** and/or **ntfy.sh push notification**
+3. Sends you a formatted reminder via **email**, **ntfy.sh push notification**, and/or **Discord**
 
 ## Quick start
 
@@ -74,7 +74,21 @@ NTFY_ENABLED=true
 NTFY_TOPIC=my-secret-nhl-picks-topic-abc123   # keep this private
 ```
 
-You can enable both channels at the same time.
+### Discord (webhook)
+
+Posts a formatted embed to any Discord channel you choose.
+
+**Setup:**
+1. Open the Discord channel you want reminders in
+2. Go to **Edit Channel → Integrations → Webhooks → New Webhook**
+3. Copy the webhook URL and paste it as `DISCORD_WEBHOOK_URL`
+
+```env
+DISCORD_ENABLED=true
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/123456789/abcdefg...
+```
+
+You can enable any combination of channels at the same time.
 
 ## Configuration reference
 
@@ -91,6 +105,8 @@ You can enable both channels at the same time.
 | `EMAIL_TO` | — | Recipient address |
 | `NTFY_ENABLED` | `false` | Enable ntfy.sh push notifications |
 | `NTFY_TOPIC` | — | Your private ntfy topic name |
+| `DISCORD_ENABLED` | `false` | Enable Discord notifications |
+| `DISCORD_WEBHOOK_URL` | — | Discord channel webhook URL |
 
 ## Notes
 

@@ -50,6 +50,9 @@ def _load_config() -> dict:
         # ntfy.sh
         "ntfy_enabled": os.getenv("NTFY_ENABLED", "false").lower() == "true",
         "ntfy_topic": os.getenv("NTFY_TOPIC", ""),
+        # Discord
+        "discord_enabled": os.getenv("DISCORD_ENABLED", "false").lower() == "true",
+        "discord_webhook_url": os.getenv("DISCORD_WEBHOOK_URL", ""),
     }
 
 
@@ -65,7 +68,7 @@ def send_reminder(config: dict) -> None:
     today = datetime.now().strftime("%A, %B %-d")
     subject = f"NHL Picks Reminder — {today}"
     plain, html = build_message(games)
-    send_notifications(subject, plain, html, config)
+    send_notifications(subject, plain, html, config, games=games)
 
 
 def main() -> None:
