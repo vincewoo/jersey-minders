@@ -7,4 +7,10 @@ services:
     environment:
       # Set this to your local timezone so reminders fire at the right time.
       # Examples: America/New_York, America/Chicago, America/Denver, America/Los_Angeles
-      - TZ=America/New_York
+      - TZ=America/Los_Angeles
+    volumes:
+      # Persist the picks database across container recreations
+      - picks_data:/app/data
+
+volumes:
+  picks_data:

@@ -5,15 +5,16 @@ Daily morning reminder to make your **Jersey Mike's NHL Predictors** picks, with
 ## What it does
 
 Every morning at a time you set, it:
-1. Fetches that day's NHL games and moneyline odds (via [The Odds API](https://the-odds-api.com))
-2. Identifies the Vegas favorite in each matchup
-3. Sends you a formatted reminder via **email**, **ntfy.sh push notification**, and/or **Discord**
+1. Resolves any pending picks from previous games and tracks your win rate
+2. Fetches that day's NHL games and moneyline odds (via [The Odds API](https://the-odds-api.com))
+3. Identifies the Vegas favorite in each matchup
+4. Sends you a formatted reminder via **email**, **ntfy.sh push notification**, and/or **Discord**, including your running win rate
 
 ## Quick start
 
 ### 1. Get a free Odds API key
 
-Sign up at [the-odds-api.com](https://the-odds-api.com) — the free tier gives you 500 requests/month, well above the ~30/month this app uses.
+Sign up at [the-odds-api.com](https://the-odds-api.com) — the free tier gives you 500 requests/month, well above the ~60/month this app uses (2 calls per day: odds + scores).
 
 ### 2. Configure
 
@@ -36,7 +37,8 @@ docker compose up -d
 ```bash
 pip install -r requirements.txt
 python main.py          # runs on schedule
-python main.py --now    # send immediately (good for testing)
+python main.py --now    # send reminder immediately (good for testing)
+python main.py --stats  # print your pick win rate and exit
 ```
 
 **Cron (send once and exit):**
@@ -110,6 +112,6 @@ You can enable any combination of channels at the same time.
 
 ## Notes
 
-- **Jersey Mike's NHL Predictors link** — the Make Your Picks button links to `https://www.jerseymikes.com/nhl`. Verify this is the correct URL for the current season's game.
-- **Odds** are sourced from DraftKings/FanDuel/BetMGM (whichever is available). The displayed favorite is based on the moneyline — negative odds or the lower number wins the comparison.
+- **Win rate tracking** — picks are saved when the reminder fires and resolved automatically on the next run by fetching completed scores. The win rate appears in every notification and in `--stats`. Data is stored in a local SQLite database (`data/picks.db`); Docker users get this persisted in a named volume automatically.
+- **Odds** are sourced from DraftKings/FanDuel/BetMGM (whichever is available). The displayed favorite is based on the moneyline — the team with the lower (more negative) number.
 - **No games today** — if there are no NHL games, the reminder still sends so you don't wonder whether it's broken.

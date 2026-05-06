@@ -5,6 +5,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 _ODDS_API_URL = "https://api.the-odds-api.com/v4/sports/icehockey_nhl/odds/"
+_SCORES_API_URL = "https://api.the-odds-api.com/v4/sports/icehockey_nhl/scores/"
 _PREFERRED_BOOKMAKERS = ["draftkings", "fanduel", "betmgm", "caesars", "williamhill_us"]
 
 
@@ -61,6 +62,31 @@ def _parse_game(game: dict, game_time_local: datetime) -> dict | None:
         "away_odds": away_odds,
         "favorite": favorite,
     }
+
+
+def get_nhl_scores(api_key: str, days_from: int = 3) -> list[dict]:
+    """Fetch recent NHL scores.
+
+    Args:
+        api_key: The Odds API key.
+        days_from: How many days back to include (1–3, per API limits).
+
+    Returns:
+        Raw list of game dicts from The Odds API scores endpoint.
+    """
+    resp = requests.get(
+        _SCORES_API_URL,
+        params={
+            "apiKey": api_key,
+            "daysFrom": days_from,
+            "includeAll": "true",
+        },
+        timeout=15,
+    )
+    remaining = resp.headers.get("x-requests-remaining", "?")
+    logger.info(f"Scores API requests remaining: {remaining}")
+    resp.raise_for_status()
+    return resp.json()
 
 
 def _extract_odds(game: dict, home_team: str, away_team: str) -> tuple[int | None, int | None]:

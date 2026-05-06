@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 def send_notifications(
-    subject: str, plain: str, html: str, config: dict, games: list[dict] | None = None
+    subject: str, plain: str, html: str, config: dict,
+    games: list[dict] | None = None,
+    win_rate: str = "No results yet",
 ) -> None:
     """Dispatch to all enabled notification channels."""
     any_enabled = False
@@ -34,7 +36,7 @@ def send_notifications(
     if config.get("discord_enabled"):
         any_enabled = True
         try:
-            payload = build_discord_payload(games or [], subject)
+            payload = build_discord_payload(games or [], subject, win_rate=win_rate)
             _send_discord(payload, config)
             logger.info("Discord notification sent successfully")
         except Exception as exc:
