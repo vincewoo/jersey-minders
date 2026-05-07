@@ -78,24 +78,38 @@ def resolve_picks(config: dict) -> None:
         logger.error(f"Could not fetch scores: {exc}")
         return
 
-    # Build lookup: (away_team, home_team) -> score data
-    scores_lookup: dict[tuple[str, str], dict] = {}
+    # Build lookup: (away_team, home_team) -> list of games (same matchup can appear
+    # on multiple dates within the daysFrom window, e.g. a playoff series)
+    scores_by_teams: dict[tuple[str, str], list[dict]] = {}
     for game in scores:
         key = (game["away_team"], game["home_team"])
-        scores_lookup[key] = game
+        scores_by_teams.setdefault(key, []).append(game)
 
     resolved = 0
     for pick in pending:
         key = (pick["away_team"], pick["home_team"])
-        if key not in scores_lookup:
+        if key not in scores_by_teams:
             continue
 
-        score_data = scores_lookup[key]
-        if not score_data.get("completed"):
+        # Find the completed game whose local date matches the pick's game_date.
+        # This prevents a later incomplete game (e.g. tomorrow's rematch) from
+        # shadowing yesterday's completed result.
+        score_data = None
+        for candidate in scores_by_teams[key]:
+            if not candidate.get("completed"):
+                continue
+            game_date = datetime.fromisoformat(
+                candidate["commence_time"].replace("Z", "+00:00")
+            ).astimezone().strftime("%Y-%m-%d")
+            if game_date == pick["game_date"]:
+                score_data = candidate
+                break
+
+        if score_data is None:
             continue
 
-        # Extract scores
-        scores_list = score_data.get("scores", [])
+        # Extract scores — use `or []` to handle an explicit null from the API
+        scores_list = score_data.get("scores") or []
         home_score = None
         away_score = None
         for s in scores_list:
