@@ -10,16 +10,16 @@ Synology DSM 7.2+ includes **Container Manager**, which supports Docker Compose 
 
 ## 1. Get the code onto your NAS
 
-SSH into your NAS and clone the repo into a folder of your choice:
+Copy the project files from your Mac to the NAS using `scp`:
 
 ```bash
-ssh your-user@your-nas-ip
-cd /volume1  # or whichever volume you use
-git clone https://github.com/vincewoo/jersey-minders.git
-cd jersey-minders
+# Run this on your Mac, not on the NAS
+scp -P 89 -r ~/workspace/jersey-minders your-user@your-nas-ip:/volume1/
 ```
 
-If git isn't available, install it via Package Center (search for "Git Server") or copy the files using File Station.
+This creates `/volume1/jersey-minders/` on the NAS with all project files.
+
+Alternatively, drag the folder into **File Station** in the DSM web UI if you prefer not to use the terminal.
 
 ## 2. Configure your environment
 

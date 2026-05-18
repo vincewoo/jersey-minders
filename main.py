@@ -172,6 +172,9 @@ def send_reminder(config: dict) -> None:
     # Save today's picks for future resolution
     if games:
         save_today_picks(games)
+    else:
+        logger.info("No NHL games today — skipping notifications")
+        return
 
     # Get win rate
     _, _, win_rate_str = get_win_rate()
