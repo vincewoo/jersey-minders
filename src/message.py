@@ -10,22 +10,22 @@ def fmt_odds(odds: int | None) -> str:
 
 
 def build_message(games: list[dict], win_rate: str = "No results yet") -> tuple[str, str]:
-    """Return (plain_text, html) for the daily reminder."""
+    """Return (plain_text, html) for the weekly NFL reminder."""
     today = datetime.now().strftime("%A, %B %-d")
 
     if not games:
         plain = (
-            f"Jersey Mike's NHL Picks Reminder — {today}\n\n"
-            "No NHL games are scheduled today. Enjoy the day off!\n"
+            f"Jersey Mike's NFL Picks Reminder — {today}\n\n"
+            "No NFL games are scheduled this week. Enjoy the week off!\n"
         )
         html = f"""<!DOCTYPE html>
 <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
   <div style="background:#c8102e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;">
-    <h1 style="margin:0;font-size:22px;">NHL Picks Reminder</h1>
+    <h1 style="margin:0;font-size:22px;">NFL Picks Reminder</h1>
     <p style="margin:5px 0 0;opacity:.9;">{today}</p>
   </div>
   <div style="background:#f9f9f9;padding:20px;border:1px solid #ddd;border-radius:0 0 8px 8px;text-align:center;">
-    <p>No NHL games today. Enjoy the day off!</p>
+    <p>No NFL games this week. Enjoy the week off!</p>
   </div>
 </body></html>"""
         return plain, html
@@ -33,9 +33,9 @@ def build_message(games: list[dict], win_rate: str = "No results yet") -> tuple[
     # --- Plain text ---
     divider = "-" * 50
     lines = [
-        f"Jersey Mike's NHL Picks Reminder — {today}",
+        f"Jersey Mike's NFL Picks Reminder — {today}",
         "=" * 50,
-        f"Today's Games  ({len(games)} game{'s' if len(games) != 1 else ''})",
+        f"This Week's Games  ({len(games)} game{'s' if len(games) != 1 else ''})",
         divider,
     ]
     for g in games:
@@ -61,8 +61,8 @@ def build_discord_payload(games: list[dict], subject: str, win_rate: str = "No r
         return {
             "username": "Jersey Minders",
             "embeds": [{
-                "title": f"🏒 {subject}",
-                "description": "No NHL games today. Enjoy the day off!",
+                "title": f"🏈 {subject}",
+                "description": "No NFL games this week. Enjoy the week off!",
                 "color": _JERSEY_MIKES_RED,
                 "footer": {"text": f"Jersey Minders · Win Rate: {win_rate} · {today}"},
             }],
@@ -78,8 +78,8 @@ def build_discord_payload(games: list[dict], subject: str, win_rate: str = "No r
     return {
         "username": "Jersey Minders",
         "embeds": [{
-            "title": f"🏒 {subject}",
-            "description": "Today's NHL picks — Vegas favorites highlighted.",
+            "title": f"🏈 {subject}",
+            "description": "This week's NFL picks — Vegas favorites highlighted.",
             "color": _JERSEY_MIKES_RED,
             "fields": fields,
             "footer": {"text": f"Jersey Minders · Win Rate: {win_rate} · {today}"},
@@ -95,27 +95,27 @@ def _build_html(today: str, games: list[dict], win_rate: str) -> str:
         away_bold = " font-weight:bold;" if g["favorite"] == g["away_team"] else ""
         home_bold = " font-weight:bold;" if g["favorite"] == g["home_team"] else ""
         rows += f"""
-       <tr style="background:{bg};">
-         <td style="padding:10px 14px;{away_bold}">{g['away_team']}</td>
-         <td style="padding:10px 14px;color:#555;font-size:13px;">{fmt_odds(g['away_odds'])}</td>
-         <td style="padding:10px 14px;color:#888;font-size:13px;text-align:center;">@</td>
-         <td style="padding:10px 14px;{home_bold}">{g['home_team']}</td>
-         <td style="padding:10px 14px;color:#555;font-size:13px;">{fmt_odds(g['home_odds'])}</td>
-         <td style="padding:10px 14px;color:#c8102e;font-weight:bold;">{fave}</td>
-       </tr>"""
+        <tr style="background:{bg};">
+          <td style="padding:10px 14px;{away_bold}">{g['away_team']}</td>
+          <td style="padding:10px 14px;color:#555;font-size:13px;">{fmt_odds(g['away_odds'])}</td>
+          <td style="padding:10px 14px;color:#888;font-size:13px;text-align:center;">@</td>
+          <td style="padding:10px 14px;{home_bold}">{g['home_team']}</td>
+          <td style="padding:10px 14px;color:#555;font-size:13px;">{fmt_odds(g['home_odds'])}</td>
+          <td style="padding:10px 14px;color:#c8102e;font-weight:bold;">{fave}</td>
+        </tr>"""
 
     return f"""<!DOCTYPE html>
 <html>
 <body style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:20px;background:#f0f0f0;">
   <div style="background:#c8102e;color:white;padding:24px 20px 18px;border-radius:10px 10px 0 0;text-align:center;">
     <p style="margin:0 0 4px;font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.8;">Jersey Mike's</p>
-    <h1 style="margin:0;font-size:26px;font-weight:bold;">NHL Picks Reminder</h1>
+    <h1 style="margin:0;font-size:26px;font-weight:bold;">NFL Picks Reminder</h1>
     <p style="margin:6px 0 0;opacity:.85;font-size:15px;">{today}</p>
   </div>
 
   <div style="background:white;padding:20px 20px 10px;border-left:1px solid #ddd;border-right:1px solid #ddd;">
     <p style="margin:0 0 16px;font-size:15px;">
-      Today's NHL picks — Vegas favorites are highlighted below.
+      This week's NFL picks — Vegas favorites are highlighted below.
     </p>
 
     <table style="width:100%;border-collapse:collapse;font-size:14px;">

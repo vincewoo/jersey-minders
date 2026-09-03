@@ -1,20 +1,20 @@
 # Jersey Minders
 
-Daily morning reminder to make your **Jersey Mike's NHL Predictors** picks, with Vegas moneyline favorites highlighted for each game.
+Weekly reminder (every Tuesday) to make your **Jersey Mike's NFL Picks** for the coming week, with the Vegas moneyline favorite highlighted for each game.
 
 ## What it does
 
-Every morning at a time you set, it:
-1. Resolves any pending picks from previous games and tracks your win rate
-2. Fetches that day's NHL games and moneyline odds (via [The Odds API](https://the-odds-api.com))
-3. Identifies the Vegas favorite in each matchup
-4. Sends you a formatted reminder via **email**, **ntfy.sh push notification**, and/or **Discord**, including your running win rate
+- **Every Tuesday** at a time you set, it:
+  1. Fetches the coming week's NFL games and moneyline odds (via [The Odds API](https://the-odds-api.com))
+  2. Identifies the Vegas favorite in each matchup
+  3. Sends you a formatted reminder listing the week's games and picks via **email**, **ntfy.sh push notification**, and/or **Discord**, including your running win rate
+- **Every 3 days** at a time you set, it resolves any pending picks from games that have been completed and updates your win rate.
 
 ## Quick start
 
 ### 1. Get a free Odds API key
 
-Sign up at [the-odds-api.com](https://the-odds-api.com) — the free tier gives you 500 requests/month, well above the ~60/month this app uses (2 calls per day: odds + scores).
+Sign up at [the-odds-api.com](https://the-odds-api.com) — the free tier gives you 500 requests/month, well above the usage this app needs (1 odds call per week + 1 scores call every 3 days).
 
 ### 2. Configure
 
@@ -36,9 +36,10 @@ docker compose up -d
 **Local Python:**
 ```bash
 pip install -r requirements.txt
-python main.py          # runs on schedule
-python main.py --now    # send reminder immediately (good for testing)
-python main.py --stats  # print your pick win rate and exit
+python main.py           # runs on schedule
+python main.py --now     # send the NFL reminder immediately (good for testing)
+python main.py --resolve # resolve pending picks immediately
+python main.py --stats   # print your pick win rate and exit
 ```
 
 **Cron (send once and exit):**
@@ -73,7 +74,7 @@ No account needed. Install the [ntfy app](https://ntfy.sh) on your phone, subscr
 
 ```env
 NTFY_ENABLED=true
-NTFY_TOPIC=my-secret-nhl-picks-topic-abc123   # keep this private
+NTFY_TOPIC=my-secret-nfl-picks-topic-abc123   # keep this private
 ```
 
 ### Discord (webhook)
@@ -97,7 +98,9 @@ You can enable any combination of channels at the same time.
 | Variable | Default | Description |
 |---|---|---|
 | `ODDS_API_KEY` | — | **Required.** Your Odds API key |
-| `REMINDER_TIME` | `09:00` | Daily send time (24h, system/container timezone) |
+| `REMINDER_TIME` | `09:00` | Tuesday send time for the NFL reminder (24h, system/container timezone) |
+| `RESOLVE_TIME` | `09:00` | Time (24h) to run pick resolution |
+| `RESOLVE_EVERY_DAYS` | `3` | How often (in days) picks are resolved |
 | `EMAIL_ENABLED` | `false` | Enable email notifications |
 | `SMTP_HOST` | `smtp.gmail.com` | SMTP server |
 | `SMTP_PORT` | `587` | SMTP port (587 = STARTTLS, 465 = SSL) |
@@ -112,6 +115,7 @@ You can enable any combination of channels at the same time.
 
 ## Notes
 
-- **Win rate tracking** — picks are saved when the reminder fires and resolved automatically on the next run by fetching completed scores. The win rate appears in every notification and in `--stats`. Data is stored in a local SQLite database (`data/picks.db`); Docker users get this persisted in a named volume automatically.
+- **Win rate tracking** — picks are saved on the Tuesday reminder (keyed by each game's own date) and resolved every `RESOLVE_EVERY_DAYS` days (default 3) by fetching completed NFL scores. The win rate appears in every notification and in `--stats`. Data is stored in a local SQLite database (`data/picks.db`); Docker users get this persisted in a named volume automatically.
 - **Odds** are sourced from DraftKings/FanDuel/BetMGM (whichever is available). The displayed favorite is based on the moneyline — the team with the lower (more negative) number.
-- **No games today** — if there are no NHL games, the reminder still sends so you don't wonder whether it's broken.
+- **No games this week** — if there are no NFL games in the coming week, the reminder still sends so you don't wonder whether it's broken.
+- **Free-tier scores window** — the scores API only reaches back 3 days on the free tier, so the every-3-days resolution cadence is what ensures each finished game is caught within its window.

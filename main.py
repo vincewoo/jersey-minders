@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Jersey Minders — daily NHL picks reminder with Vegas odds suggestions.
+Jersey Minders — weekly NFL picks reminder with Vegas odds suggestions.
 
 Usage:
-  python main.py          # run on schedule (every day at REMINDER_TIME)
-  python main.py --now    # send reminder immediately and exit
-  python main.py --stats  # print win rate and exit
+  python main.py           # run on schedule (NFL reminder every Tuesday at REMINDER_TIME;
+                           # pick resolution every RESOLVE_EVERY_DAYS days at RESOLVE_TIME)
+  python main.py --now     # send the NFL reminder immediately and exit
+  python main.py --resolve # resolve pending picks immediately and exit
+  python main.py --stats   # print win rate and exit
 """
 
 import logging
@@ -27,7 +29,7 @@ from src.database import (
 )
 from src.message import build_message
 from src.notifier import send_notifications
-from src.odds import get_nhl_scores, get_todays_nhl_games
+from src.odds import get_nfl_scores, get_upcoming_week_nfl_games
 
 load_dotenv()
 
@@ -48,6 +50,8 @@ def _load_config() -> dict:
     return {
         "odds_api_key": api_key,
         "reminder_time": os.getenv("REMINDER_TIME", "09:00"),
+        "resolve_time": os.getenv("RESOLVE_TIME", "09:00"),
+        "resolve_every_days": int(os.getenv("RESOLVE_EVERY_DAYS", "3")),
         # Email
         "email_enabled": os.getenv("EMAIL_ENABLED", "false").lower() == "true",
         "smtp_host": os.getenv("SMTP_HOST", "smtp.gmail.com"),
@@ -73,7 +77,7 @@ def resolve_picks(config: dict) -> None:
         return
 
     try:
-        scores = get_nhl_scores(config["odds_api_key"])
+        scores = get_nfl_scores(config["odds_api_key"])
     except Exception as exc:
         logger.error(f"Could not fetch scores: {exc}")
         return
@@ -139,48 +143,44 @@ def resolve_picks(config: dict) -> None:
     logger.info(f"Resolved {resolved} pick(s)")
 
 
-def save_today_picks(games: list[dict]) -> None:
-    """Save today's picks to the pending picks table."""
-    today_str = datetime.now().strftime("%Y-%m-%d")
+def save_week_picks(games: list[dict]) -> None:
+    """Save the coming week's picks to the pending picks table, keyed by each game's own date."""
     count = 0
     for g in games:
         pick_team = g["favorite"] or ""
         if not pick_team:
             continue
+        game_date = g["game_time"].strftime("%Y-%m-%d")
         save_pending_pick(
-            game_date=today_str,
+            game_date=game_date,
             home_team=g["home_team"],
             away_team=g["away_team"],
             pick_team=pick_team,
         )
         count += 1
-    logger.info(f"Saved {count} pending pick(s) for {today_str}")
+    logger.info(f"Saved {count} pending pick(s) for the coming week")
 
 
-def send_reminder(config: dict) -> None:
-    logger.info("Checking results for previous picks...")
-    resolve_picks(config)
-
-    logger.info("Fetching today's NHL games and odds...")
+def send_nfl_reminder(config: dict) -> None:
+    logger.info("Fetching the coming week's NFL games and odds...")
     try:
-        games = get_todays_nhl_games(config["odds_api_key"])
-        logger.info(f"Found {len(games)} NHL game(s) today")
+        games = get_upcoming_week_nfl_games(config["odds_api_key"])
+        logger.info(f"Found {len(games)} NFL game(s) this week")
     except Exception as exc:
         logger.error(f"Could not fetch odds: {exc}")
         games = []
 
-    # Save today's picks for future resolution
+    # Save this week's picks for future resolution
     if games:
-        save_today_picks(games)
+        save_week_picks(games)
     else:
-        logger.info("No NHL games today — skipping notifications")
-        return
+        logger.info("No NFL games this week — sending a 'no games' notification")
 
     # Get win rate
     _, _, win_rate_str = get_win_rate()
 
     today = datetime.now().strftime("%A, %B %-d")
-    subject = f"NHL Picks Reminder - {today}"
+    subject = f"NFL Picks Reminder - {today}"
     plain, html = build_message(games, win_rate=win_rate_str)
     send_notifications(subject, plain, html, config, games=games, win_rate=win_rate_str)
 
@@ -202,12 +202,21 @@ def main() -> None:
 
     if "--now" in sys.argv:
         logger.info("Sending reminder now (--now flag detected)")
-        send_reminder(config)
+        send_nfl_reminder(config)
+        return
+
+    if "--resolve" in sys.argv:
+        logger.info("Resolving pending picks now (--resolve flag detected)")
+        resolve_picks(config)
         return
 
     reminder_time = config["reminder_time"]
-    logger.info(f"Jersey Minders started — will remind daily at {reminder_time}")
-    schedule.every().day.at(reminder_time).do(send_reminder, config=config)
+    resolve_time = config["resolve_time"]
+    resolve_every_days = config["resolve_every_days"]
+    logger.info(f"Jersey Minders started — NFL reminder every Tuesday at {reminder_time}")
+    schedule.every(1).tuesday.at(reminder_time).do(send_nfl_reminder, config=config)
+    logger.info(f"Pick resolution every {resolve_every_days} day(s) at {resolve_time}")
+    schedule.every(resolve_every_days).days.at(resolve_time).do(resolve_picks, config=config)
 
     while True:
         schedule.run_pending()

@@ -82,7 +82,7 @@ def _send_ntfy(subject: str, plain: str, config: dict) -> None:
         headers={
             "Title": subject,
             "Priority": "default",
-            "Tags": "ice_hockey",
+            "Tags": "football",
         },
         timeout=15,
     )
